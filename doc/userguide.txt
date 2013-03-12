@@ -1,14 +1,13 @@
 tpl User Guide
 ==============
-Troy D. Hanson <thanson@users.sourceforge.net>
+Troy D. Hanson <tdh@tkhanson.net>
 v1.5, February 2010
 
-include::sflogo.txt[]
-include::topnav.txt[]
+To download tpl, follow this link back to the
+https://github.com/troydhanson/tpl[GitHub project page].
 
 Overview
 --------
-include::toc.txt[]
 
 Serialization in C
 ~~~~~~~~~~~~~~~~~~
@@ -117,18 +116,30 @@ It is free and open source.
 
 Download
 ~~~~~~~~
-Please follow the link to download on the 
-http://tpl.sourceforge.net[tpl website].
+You can clone tpl, or get a zipfile, from the
+https://github.com/troydhanson/tpl[GitHub project page].
 
 Getting help
 ~~~~~~~~~~~~
-If you need help, you are welcome to email the author at
-mailto:thanson@users.sourceforge.net[].
+Please ask on Github if you need help. You can email the author at
+Troy D. Hanson <tdh@tkhanson.net>, but I am often behind on email by weeks or
+months. Sorry!
 
-Resources
-~~~~~~~~~
-News::
- The author has a news feed for http://troydhanson.wordpress.com/feed/[software updates] image:img/rss.png[(RSS)].
+Contributing
+~~~~~~~~~~~~
+If you add a new feature or fix something in tpl or in the extras, please
+make a pull request on Github. For anything other than a trivial change, include
+a unit test and documentation if you possibly can. (And don't be discouraged if
+it takes weeks or even months for me to merge it. Sorry, my life is busy!) Thanks!
+
+News
+~~~~
+The author has a blog for http://troydhanson.wordpress.com/[software updates]
+image:rss.png[(RSS)]. You can also follow @troydhanson on Twitter for updates.
+
+Other software
+^^^^^^^^^^^^^^
+Other open-source software by the author is listed at http://tkhanson.net.
 
 Build and install
 -----------------

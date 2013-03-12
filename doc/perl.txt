@@ -1,14 +1,10 @@
 tpl Perl API
 ============
-Troy D. Hanson <troydhanson@comcast.net>
+Troy D. Hanson <tdh@tkhanson.net>
 v1.1, April 2007
-
-include::sflogo.txt[]
-include::topnav.txt[]
 
 Perl API
 --------
-include::toc.txt[]
 
 The Perl API for reading and writing tpl is nearly identical to the C API. This
 document will briefly explain the Perl API and provide examples. The chief

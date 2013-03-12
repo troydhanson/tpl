@@ -1,26 +1,16 @@
-all: css userguide pdf changelog perl 
+HTML=$(patsubst %.txt,%.html,$(wildcard *.txt))
 
-userguide:	txt/userguide.txt
-	asciidoc --unsafe --out-file=html/userguide.html -a linkcss=1 -a theme=tdh txt/userguide.txt 
+all: $(HTML)
+  
+# when each target of a multi-target rule has its own prereq 
+# we use a static pattern rule. 
+$(HTML): %.html: %.txt
+	asciidoc -a toc2 $<
 
-changelog:	txt/ChangeLog.txt
-	asciidoc --out-file=html/ChangeLog.html txt/ChangeLog.txt 
+TMP=/tmp/tpl-gh-pages
+stage:
+	mkdir -p ${TMP}
+	rm -if ${TMP}/*
+	cp *.html *.css *.png ${TMP}
 
-.PHONY: pdf
 
-pdf: txt/userguide.txt
-	a2x -f pdf $<
-	mv txt/userguide.pdf pdf/
-	cd html && ln -sf ../pdf/userguide.pdf userguide.pdf
-	rm -f txt/userguide.xml
-
-perl: txt/perl.txt
-	asciidoc --unsafe --out-file=html/perl.html -a linkcss=1 -a theme=tdh txt/perl.txt 
-
-css: html/toc.css
-	cat /etc/asciidoc/stylesheets/xhtml11.css html/toc.css > html/tdh.css
-	cp /etc/asciidoc/stylesheets/xhtml11-quirks.css html/tdh-quirks.css 
-
-docbook: txt/userguide.txt
-	asciidoc -b docbook --out-file=/tmp/userguide.xml txt/userguide.txt 
-	xmlto -o html html-nochunks /tmp/userguide.xml 

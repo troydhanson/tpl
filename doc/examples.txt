@@ -1,14 +1,11 @@
 tpl examples
 ============
-Troy D. Hanson <troydhanson@comcast.net>>
+Troy D. Hanson <tdh@tkhanson.net>
 v1.0, October 2006
 
-include::sflogo.txt[]
-include::topnav.txt[]
 
 Examples
 --------
-include::toc.txt[]
 
 This document is a set of representative examples demonstrating how to use
 tpl. If you're looking for a more explanatory document, please read the
