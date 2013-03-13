@@ -1,4 +1,6 @@
-tpl
-===
 
-tpl - a small binary serialization library for C
+Documentation for tpl is available at:
+
+http://troydhanson.github.com/tpl/
+
+
