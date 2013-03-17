@@ -1,6 +1,6 @@
 AC_PREREQ(2.59)
 
-AC_INIT([libtpl], [1.4], [thanson@users.sourceforge.net])
+AC_INIT([libtpl], [1.4], [tdh@tkhanson.net])
 AC_CONFIG_SRCDIR(src/tpl.c)
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADERS(config/config.h)

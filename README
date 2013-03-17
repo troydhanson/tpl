@@ -3,7 +3,7 @@ tpl: fast, easy serialization in C
 
 Documentation for tpl is available in the doc/ directory or at:
 
-    http://tpl.sourceforge.net
+    http://troydhanson.github.com/tpl
 
 You can build tpl as a library, like so:
 
@@ -51,6 +51,6 @@ ChangeLog.
 
 Feel free to send me questions, comments or bug reports.
 
-Troy D. Hanson, February 5, 2010 
-thanson@users.sourceforge.net
+Troy D. Hanson, March 17 2013
+tdh@tkhanson.net
 

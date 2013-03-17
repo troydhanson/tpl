@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2010, Troy D. Hanson     http://tpl.sourceforge.net
+Copyright (c) 2005-2013, Troy D. Hanson     http://troydhanson.github.com/tpl/
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
