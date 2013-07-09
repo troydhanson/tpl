@@ -53,6 +53,9 @@ typedef unsigned __int32 uint32_t;
 typedef unsigned __int64 uint64_t;
 #endif
 
+#ifndef S_ISREG
+#define S_ISREG(mode)  (((mode) & S_IFMT) == S_IFREG)
+#endif
 
 #if ( defined __CYGWIN__ || defined __MINGW32__ || defined _WIN32 )
 #include "win/mman.h"   /* mmap */
