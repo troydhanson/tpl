@@ -123,3 +123,4 @@ test121: test s##
 test122: test S(ic#f$(ci))
 test123: setjmp/longjmp based fatal error handler
 test124: test A(S(c#)s) as per bug report from Eric Rose
+test125: test to manifest a free bug with S(s)# per Andrei Diaconu
