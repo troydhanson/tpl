@@ -680,7 +680,7 @@ TPL_API void tpl_free(tpl_node *r) {
     int mmap_bits = (TPL_RDONLY|TPL_FILE);
     int ufree_bits = (TPL_MEM|TPL_UFREE);
     tpl_node *nxtc,*c;
-    int find_next_node=0,looking,i;
+    int find_next_node=0,looking,num,i;
     tpl_pidx *pidx,*pidx_nxt;
 
     /* For mmap'd files, or for 'ufree' memory images , do appropriate release */
@@ -707,7 +707,15 @@ TPL_API void tpl_free(tpl_node *r) {
                     break;
                 case TPL_TYPE_STR:
                     /* free any packed (copied) string */
-                    for(i=0; i < c->num; i++) {
+                    num = 1;
+                    nxtc = c->next;
+                    while (nxtc) {
+                        if (nxtc->type == TPL_TYPE_POUND) {
+                            num = nxtc->num;
+                        }
+                        nxtc = nxtc->next;
+                    }
+                    for(i=0; i < c->num * num; i++) {
                       char *str = ((char**)c->data)[i];
                       if (str) {
                         tpl_hook.free(str);
