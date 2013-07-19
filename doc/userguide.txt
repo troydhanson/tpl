@@ -162,6 +162,8 @@ Alternatively, to build tpl as a library, from the top-level directory, run:
     make
     make install
 
+(Note that, if `configure` is missing, generate it by running `bootstrap`.)
+
 This installs a static library `libtpl.a` and a shared library (e.g.,
 `libtpl.so`), if your system supports them, in standard places. The installation
 directory can be customized using `./configure --prefix=/some/directory`. Run
@@ -177,27 +179,25 @@ You can compile and run the built-in test suite by running:
 On Windows
 ~~~~~~~~~~
 
+Compile-in
+^^^^^^^^^^
+Tpl can be used directly (instead of as a DLL) by compiling the tpl sources
+right into your program. To do this, add `tpl.c`, `tpl.h`, `win/mman.h` and
+`win/mmap.c` to your program's source and header files and add the preprocessor
+definition `TPL_NOLIB`.
+
 DLL
 ^^^
-On the tpl home page, a Visual Studio 2008 solution package is available for
-download.  This zip file contains pre-built 32- and 64-bit versions of tpl as a
-DLL.  If you like, you can build the DLL yourself using  VS2008 or VS2010 (the
-free Express Edition is sufficient) by opening the solution file and choosing
-Build Solution. 
-
-Non-DLL usage
-^^^^^^^^^^^^^
-Alternatively, tpl can be used directly (instead of as a DLL) by compiling
-the tpl sources right into your program. To do this, add `tpl.c`, `tpl.h`,
-`win/mman.h` and `win/mmap.c` to your program's source and header files and 
-add the preprocessor definition `TPL_NOLIB`.
+If you like, you can build the DLL yourself using VS2008 or VS2010 (the
+free Express Edition is sufficient) and perhaps newer versions, though this has
+not been tested by the author. (As of 2013 we need to restore the solution file
+to make this easy, that's currently missing).
 
 MinGW/Cygwin
 ^^^^^^^^^^^^
-Prior to tpl release 1.5, using tpl on Windows required building it with MinGW
-or Cygwin. This is no longer necessary. If you want to build it that way anyway,
-use the non-Windows (i.e. tar.bz2) tpl download and follow the "configure; make;
-make install" approach.
+You can build it in the traditional Unix method under Cygwin/MinGW using the
+"configure; make; make install" approach. If the "configure" script is not
+present in the repository you cloned, generate it by running "bootstrap".
 
 API concepts
 ------------
