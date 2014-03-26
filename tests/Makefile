@@ -36,7 +36,7 @@ PROGS = test1 test2 test3 test4 test5 test6 test7 test8 \
     test97 test98 test99 test100 test101 test102 test103 test104 \
     test105 test106 test107 test108 test109 test110 test111 test112 \
     test113 test114 test115 test116 test117 test118 test119 test120 \
-    test121 test122 test123 test124 test125
+    test121 test122 test123 test124 test125 test126
 
 TPLSRC = ../src
 CFLAGS = -I$(TPLSRC) -g

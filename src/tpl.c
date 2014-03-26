@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2013, Troy D. Hanson     http://troydhanson.github.com/tpl/
+Copyright (c) 2005-2014, Troy D. Hanson     http://troydhanson.github.io/tpl/
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -21,10 +21,7 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define TPL_VERSION 1.6
-
-static const char id[]="$Id: tpl.c 192 2009-04-24 10:35:30Z thanson $";
-
+#define TPL_VERSION 1.6.1
 
 #include <stdlib.h>  /* malloc */
 #include <stdarg.h>  /* va_list */
@@ -110,6 +107,7 @@ typedef unsigned __int64 uint64_t;
 #define TPL_TYPE_INT16  10
 #define TPL_TYPE_UINT16 11
 #define TPL_TYPE_POUND  12
+#define TPL_TYPE_PTR    13
 
 /* error codes */
 #define ERR_NOT_MINSIZE        (-1)
@@ -230,9 +228,9 @@ tpl_hook_t tpl_hook = {
     /* .gather_max = */ 0 /* max tpl size (bytes) for tpl_gather */
 };
 
-static const char tpl_fmt_chars[] = "AS($)BiucsfIUjv#"; /* valid format chars */
-static const char tpl_S_fmt_chars[] = "iucsfIUjv#$()"; /* valid within S(...) */
-static const char tpl_datapeek_ok_chars[] = "iucsfIUjv"; /* valid in datapeek */
+static const char tpl_fmt_chars[] = "AS($)BiucsfIUjv#p"; /* valid format chars */
+static const char tpl_S_fmt_chars[] = "iucsfIUjv#$()p"; /* valid within S(...) */
+static const char tpl_datapeek_ok_chars[] = "iucsfIUjvp"; /* valid in datapeek */
 static const struct tpl_type_t tpl_types[] = {
     /* [TPL_TYPE_ROOT] =   */  {'r', 0},
     /* [TPL_TYPE_INT32] =  */  {'i', sizeof(int32_t)},
@@ -247,6 +245,7 @@ static const struct tpl_type_t tpl_types[] = {
     /* [TPL_TYPE_INT16] =  */  {'j', sizeof(int16_t)},
     /* [TPL_TYPE_UINT16] = */  {'v', sizeof(uint16_t)},
     /* [TPL_TYPE_POUND] =  */  {'#', 0},
+    /* [TPL_TYPE_PTR] =    */  {'p', sizeof(void*)},
 };
 
 /* default error-reporting function. Just writes to stderr. */
@@ -356,6 +355,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
             case 'I':
             case 'U':
             case 'f':
+            case 'p':
                 if      (*c=='c') t=TPL_TYPE_BYTE;
                 else if (*c=='i') t=TPL_TYPE_INT32;
                 else if (*c=='u') t=TPL_TYPE_UINT32;
@@ -364,6 +364,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                 else if (*c=='I') t=TPL_TYPE_INT64;
                 else if (*c=='U') t=TPL_TYPE_UINT64;
                 else if (*c=='f') t=TPL_TYPE_DOUBLE;
+                else if (*c=='p') t=TPL_TYPE_PTR;
 
                 if (expect_lparen) goto fail;
                 n = tpl_node_new(parent);
@@ -417,7 +418,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                         t == TPL_TYPE_UINT32 || t == TPL_TYPE_DOUBLE ||
                         t == TPL_TYPE_UINT64 || t == TPL_TYPE_INT64 || 
                         t == TPL_TYPE_UINT16 || t == TPL_TYPE_INT16 || 
-                        t == TPL_TYPE_STR )) goto fail;
+                        t == TPL_TYPE_STR    || t == TPL_TYPE_PTR )) goto fail;
                 }
                 /* count up how many contiguous # and form their product */
                 pound_prod=1;
@@ -629,6 +630,7 @@ static void tpl_free_keep_map(tpl_node *r) {
                 case TPL_TYPE_INT16:
                 case TPL_TYPE_UINT16:
                 case TPL_TYPE_POUND:
+                case TPL_TYPE_PTR:
                     find_next_node=1;
                     break;
                 case TPL_TYPE_ARY:
@@ -726,6 +728,7 @@ TPL_API void tpl_free(tpl_node *r) {
                 case TPL_TYPE_INT16:
                 case TPL_TYPE_UINT16:
                 case TPL_TYPE_POUND:
+                case TPL_TYPE_PTR:
                     tpl_hook.free(c->data);
                     find_next_node=1;
                     break;
@@ -857,6 +860,7 @@ static void *tpl_dump_atyp(tpl_node *n, tpl_atyp* at, void *dv) {
                 case TPL_TYPE_UINT64:
                 case TPL_TYPE_INT16:
                 case TPL_TYPE_UINT16:
+                case TPL_TYPE_PTR:
                     dv = tpl_cpv(dv,datav,tpl_types[c->type].sz * c->num);
                     datav = (void*)((uintptr_t)datav + tpl_types[c->type].sz * c->num);
                     break;
@@ -930,6 +934,7 @@ static size_t tpl_ser_osz(tpl_node *n) {
             case TPL_TYPE_UINT64:
             case TPL_TYPE_INT16:
             case TPL_TYPE_UINT16:
+            case TPL_TYPE_PTR:
                 sz += tpl_types[c->type].sz * c->num;
                 break;
             case TPL_TYPE_BIN:
@@ -1100,6 +1105,7 @@ static int tpl_dump_to_mem(tpl_node *r,void *addr,size_t sz) {
             case TPL_TYPE_UINT64:
             case TPL_TYPE_INT16:
             case TPL_TYPE_UINT16:
+            case TPL_TYPE_PTR:
                 dv = tpl_cpv(dv,c->data,tpl_types[c->type].sz * c->num);
                 break;
             case TPL_TYPE_BIN:
@@ -1581,6 +1587,7 @@ static void tpl_free_atyp(tpl_node *n, tpl_atyp *atyp) {
                 case TPL_TYPE_UINT64:
                 case TPL_TYPE_INT16:
                 case TPL_TYPE_UINT16:
+                case TPL_TYPE_PTR:
                     dv = (void*)((uintptr_t)dv + tpl_types[c->type].sz*c->num);
                     break;
                 case TPL_TYPE_BIN:
@@ -1659,6 +1666,7 @@ static int tpl_serlen(tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
                 case TPL_TYPE_UINT64:
                 case TPL_TYPE_INT16:
                 case TPL_TYPE_UINT16:
+                case TPL_TYPE_PTR:
                     for(fidx=0; fidx < c->num; fidx++) {  /* octothorpe support */
                         if ((uintptr_t)dv + tpl_types[c->type].sz > buf_past) return -1;
                         dv = (void*)((uintptr_t)dv + tpl_types[c->type].sz);
@@ -1811,6 +1819,7 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
             case TPL_TYPE_UINT64:
             case TPL_TYPE_INT16:
             case TPL_TYPE_UINT16:
+            case TPL_TYPE_PTR:
                 /* no need to use fidx iteration here; we can copy multiple values in one memcpy */
                 memcpy(child->data,child->addr,tpl_types[child->type].sz * child->num);
                 if (datav) datav = tpl_cpv(datav,child->data,tpl_types[child->type].sz * child->num);
@@ -1989,6 +1998,7 @@ TPL_API int tpl_unpack(tpl_node *r, int i) {
             case TPL_TYPE_UINT64:
             case TPL_TYPE_INT16:
             case TPL_TYPE_UINT16:
+            case TPL_TYPE_PTR:
                 /* unpack elements of cross-endian octothorpic array individually */
                 if (((tpl_root_data*)(r->data))->flags & TPL_XENDIAN) {
                     for(fidx=0; fidx < c->num; fidx++) {
@@ -2101,6 +2111,7 @@ static int tpl_unpackA0(tpl_node *r) {
             case TPL_TYPE_UINT64:
             case TPL_TYPE_INT16:
             case TPL_TYPE_UINT16:
+            case TPL_TYPE_PTR:
                 for(fidx=0;fidx < c->num; fidx++) {
                     dv = (void*)((uintptr_t)dv + tpl_types[c->type].sz);
                 }
