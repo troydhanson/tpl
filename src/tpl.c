@@ -185,7 +185,7 @@ static int tpl_mmap_file(char *filename, tpl_mmap_rec *map_rec);
 static int tpl_mmap_output_file(char *filename, size_t sz, void **text_out);
 static int tpl_cpu_bigendian(void);
 static int tpl_needs_endian_swap(void *);
-static void tpl_byteswap(void *word, int len);
+static void tpl_byteswap(void *word, ssize_t len);
 static void tpl_fatal(const char *fmt, ...);
 static int tpl_serlen(tpl_node *r, tpl_node *n, void *dv, size_t *serlen);
 static int tpl_unpackA0(tpl_node *r);
@@ -229,7 +229,10 @@ tpl_hook_t tpl_hook = {
 };
 
 static const char tpl_fmt_chars[] = "AS($)BiucsfIUjv#p"; /* valid format chars */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
 static const char tpl_S_fmt_chars[] = "iucsfIUjv#$()p"; /* valid within S(...) */
+#pragma clang diagnostic pop
 static const char tpl_datapeek_ok_chars[] = "iucsfIUjvp"; /* valid in datapeek */
 static const struct tpl_type_t tpl_types[] = {
     /* [TPL_TYPE_ROOT] =   */  {'r', 0},
@@ -283,7 +286,7 @@ static tpl_node *tpl_node_new(tpl_node *parent) {
  */
 char *calc_field_addr(tpl_node *parent, int type,char *struct_addr, int ordinal) {
     tpl_node *prev;
-    int offset;
+    uintptr_t offset;
     int align_sz;
 
     if (ordinal == 1) return struct_addr;  /* first field starts on structure address */
@@ -876,7 +879,7 @@ static void *tpl_dump_atyp(tpl_node *n, tpl_atyp* at, void *dv) {
                     /* dump the string length followed by the string */
                     for(i=0; i < c->num; i++) {
                       memcpy(&strp,datav,sizeof(char*)); /* cp to aligned */
-                      slen = strp ? (strlen(strp)+1) : 0;
+                      slen = strp ? (uint32_t)(strlen(strp)+1) : 0;
                       dv = tpl_cpv(dv,&slen,sizeof(uint32_t));
                       if (slen > 1) dv = tpl_cpv(dv,strp,slen-1);
                       datav = (void*)((uintptr_t)datav + sizeof(char*));
@@ -983,11 +986,12 @@ static size_t tpl_ser_osz(tpl_node *n) {
 }
 
 
-TPL_API int tpl_dump(tpl_node *r, int mode, ...) {
+TPL_API ssize_t tpl_dump(tpl_node *r, int mode, ...) {
     va_list ap;
     char *filename, *bufv;
     void **addr_out,*buf, *pa_addr;
-    int fd,rc=0;
+    int fd;
+    ssize_t rc = 0;
     size_t sz,*sz_out, pa_sz;
     struct stat sbuf;
 
@@ -1071,7 +1075,7 @@ TPL_API int tpl_dump(tpl_node *r, int mode, ...) {
  * the result of tpl_ser_osz(r).
  */
 static int tpl_dump_to_mem(tpl_node *r,void *addr,size_t sz) {
-    uint32_t slen, sz32;
+    size_t slen, sz32;
     int *fxlens, num_fxlens, i;
     void *dv;
     char *fmt,flags;
@@ -1083,7 +1087,7 @@ static int tpl_dump_to_mem(tpl_node *r,void *addr,size_t sz) {
     flags = 0;
     if (tpl_cpu_bigendian()) flags |= TPL_FL_BIGENDIAN;
     if (strchr(fmt,'s')) flags |= TPL_FL_NULLSTRINGS;
-    sz32 = sz; 
+    sz32 = sz;
 
     dv = addr;
     dv = tpl_cpv(dv,TPL_MAGIC,3);         /* copy tpl magic prefix */
@@ -1279,10 +1283,10 @@ TPL_API char* tpl_peek(int mode, ...) {
     char *filename=NULL, *datapeek_f=NULL, *datapeek_c, *datapeek_s;
     void *addr=NULL, *dv, *datapeek_p=NULL;
     size_t sz=0, fmt_len, first_atom, num_fxlens=0;
-    uint32_t datapeek_ssz, datapeek_csz, datapeek_flen;
+    ssize_t datapeek_ssz, datapeek_csz, datapeek_flen;
     tpl_mmap_rec mr = {0,NULL,0};
     char *fmt,*fmt_cpy=NULL,c;
-    uint32_t intlsz, **fxlens=NULL, *num_fxlens_out=NULL, *fxlensv;
+    size_t intlsz, **fxlens=NULL, *num_fxlens_out=NULL, *fxlensv;
 
     va_start(ap,mode);
     if ((mode & TPL_FXLENS) && (mode & TPL_DATAPEEK)) {
@@ -1301,8 +1305,8 @@ TPL_API char* tpl_peek(int mode, ...) {
         datapeek_f = va_arg(ap, char*);
     }
     if (mode & TPL_FXLENS) {
-        num_fxlens_out = va_arg(ap,uint32_t *);
-        fxlens = va_arg(ap,uint32_t **);
+        num_fxlens_out = (size_t *)va_arg(ap,uint32_t *);
+        fxlens = (size_t **)va_arg(ap,uint32_t **);
         *num_fxlens_out = 0;
         *fxlens = NULL;
     }
@@ -1432,11 +1436,12 @@ fail:
 /* tpl_jot(TPL_FILE, "file.tpl", "si", &s, &i); */
 /* tpl_jot(TPL_MEM, &buf, &sz, "si", &s, &i); */
 /* tpl_jot(TPL_FD, fd, "si", &s, &i); */
-TPL_API int tpl_jot(int mode, ...) {
+TPL_API ssize_t tpl_jot(int mode, ...) {
     va_list ap;
     char *filename, *fmt;
     size_t *sz;
-    int fd, rc=0;
+    int fd;
+    ssize_t rc=0;
     void **buf;
     tpl_node *tn;
 
@@ -1478,9 +1483,9 @@ fail:
 TPL_API int tpl_load(tpl_node *r, int mode, ...) {
     va_list ap;
     int rc=0,fd=0;
-    char *filename=NULL;
-    void *addr;
-    size_t sz;
+    char *filename = NULL;
+    void *addr = NULL;
+    size_t sz = 0;
 
     va_start(ap,mode);
     if (mode & TPL_FILE) filename = va_arg(ap,char *);
@@ -1788,7 +1793,7 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
     tpl_node *n, *child, *np;
     void *datav=NULL;
     size_t sz, itermax;
-    uint32_t slen;
+    ssize_t slen;
     char *str;
     tpl_bin *bin;
     tpl_pound_data *pd;
@@ -1837,7 +1842,7 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
                 bin = tpl_hook.malloc(sizeof(tpl_bin));
                 if (!bin) fatal_oom();
                 bin->addr = str;
-                bin->sz = slen;
+                bin->sz = (uint32_t)slen;
                 /* now pack its pointer, first deep freeing any pre-existing bin */
                 if (*(tpl_bin**)(child->data) != NULL) {
                     if ((*(tpl_bin**)(child->data))->sz != 0) {
@@ -2164,7 +2169,7 @@ static int tpl_unpackA0(tpl_node *r) {
 }
 
 /* In-place byte order swapping of a word of length "len" bytes */
-static void tpl_byteswap(void *word, int len) {
+static void tpl_byteswap(void *word, ssize_t len) {
     int i;
     char c, *w;
     w = (char*)word;
@@ -2233,7 +2238,8 @@ TPL_API int tpl_gather(int mode, ...) {
  */
 static int tpl_gather_blocking(int fd, void **img, size_t *sz) {
     char preamble[8];
-    int i=0, rc;
+    int i=0;
+    ssize_t rc;
     uint32_t tpllen;
 
     do { 
@@ -2302,7 +2308,8 @@ static int tpl_gather_blocking(int fd, void **img, size_t *sz) {
 /* the file descriptor must be non-blocking for this functino to work. */
 static int tpl_gather_nonblocking( int fd, tpl_gather_t **gs, tpl_gather_cb *cb, void *data) {
     char buf[TPL_GATHER_BUFLEN], *img, *tpl;
-    int rc, keep_looping, cbrc=0;
+    ssize_t rc;
+    int keep_looping, cbrc=0;
     size_t catlen;
     uint32_t tpllen;
 
@@ -2386,7 +2393,7 @@ static int tpl_gather_nonblocking( int fd, tpl_gather_t **gs, tpl_gather_cb *cb,
                     fatal_oom();
                 }
                 (*gs)->img = tpl;
-                (*gs)->len = catlen;
+                (*gs)->len = (int)catlen;
             } else if (tpl < img+catlen) {  
                 /* consumed 1+ tpl(s) from img!=buf or 0 from img==buf */
                 if ( (*gs = tpl_hook.malloc(sizeof(tpl_gather_t))) == NULL ) {
@@ -2395,7 +2402,7 @@ static int tpl_gather_nonblocking( int fd, tpl_gather_t **gs, tpl_gather_cb *cb,
                 if ( ((*gs)->img = tpl_hook.malloc(img+catlen - tpl)) == NULL ) {
                     fatal_oom();
                 }
-                (*gs)->len = img+catlen - tpl;
+                (*gs)->len = (int)(img+catlen - tpl);
                 memcpy( (*gs)->img, tpl, img+catlen - tpl);
                 /* free partially consumed concat buffer if used */
                 if (img != buf) tpl_hook.free(img); 
@@ -2471,7 +2478,7 @@ static int tpl_gather_mem( char *buf, size_t len, tpl_gather_t **gs, tpl_gather_
             fatal_oom();
         }
         (*gs)->img = tpl;
-        (*gs)->len = catlen;
+        (*gs)->len = (int)catlen;
     } else if (tpl < img+catlen) {  
         /* consumed 1+ tpl(s) from img!=buf or 0 from img==buf */
         if ( (*gs = tpl_hook.malloc(sizeof(tpl_gather_t))) == NULL ) {
@@ -2480,7 +2487,7 @@ static int tpl_gather_mem( char *buf, size_t len, tpl_gather_t **gs, tpl_gather_
         if ( ((*gs)->img = tpl_hook.malloc(img+catlen - tpl)) == NULL ) {
             fatal_oom();
         }
-        (*gs)->len = img+catlen - tpl;
+        (*gs)->len = (int)(img+catlen - tpl);
         memcpy( (*gs)->img, tpl, img+catlen - tpl);
         /* free partially consumed concat buffer if used */
         if (img != buf) tpl_hook.free(img); 
