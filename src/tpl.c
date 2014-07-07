@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdarg.h>  /* va_list */
 #include <string.h>  /* memcpy, memset, strchr */
 #include <stdio.h>   /* printf (tpl_hook.oops default function) */
+#include <limits.h> /* for INT_MIN, INT_MAX */
 
 #ifndef _WIN32
 #include <unistd.h>     /* for ftruncate */
@@ -185,7 +186,7 @@ static int tpl_mmap_file(char *filename, tpl_mmap_rec *map_rec);
 static int tpl_mmap_output_file(char *filename, size_t sz, void **text_out);
 static int tpl_cpu_bigendian(void);
 static int tpl_needs_endian_swap(void *);
-static void tpl_byteswap(void *word, ssize_t len);
+static void tpl_byteswap(void *word, size_t len);
 static void tpl_fatal(const char *fmt, ...);
 static int tpl_serlen(tpl_node *r, tpl_node *n, void *dv, size_t *serlen);
 static int tpl_unpackA0(tpl_node *r);
@@ -286,7 +287,7 @@ static tpl_node *tpl_node_new(tpl_node *parent) {
  */
 char *calc_field_addr(tpl_node *parent, int type,char *struct_addr, int ordinal) {
     tpl_node *prev;
-    uintptr_t offset;
+    size_t offset;
     int align_sz;
 
     if (ordinal == 1) return struct_addr;  /* first field starts on structure address */
@@ -305,7 +306,7 @@ char *calc_field_addr(tpl_node *parent, int type,char *struct_addr, int ordinal)
         align_sz = tpl_types[type].sz;
         break;
     }
-    offset = ((uintptr_t)prev->addr - (uintptr_t)struct_addr)
+    offset = ((size_t)prev->addr - (size_t)struct_addr)
             + (tpl_types[prev->type].sz * prev->num);
     offset = (offset + align_sz - 1) / align_sz * align_sz;
     return struct_addr + offset;
@@ -986,12 +987,12 @@ static size_t tpl_ser_osz(tpl_node *n) {
 }
 
 
-TPL_API ssize_t tpl_dump(tpl_node *r, int mode, ...) {
+TPL_API int tpl_dump(tpl_node *r, int mode, ...) {
     va_list ap;
     char *filename, *bufv;
     void **addr_out,*buf, *pa_addr;
     int fd;
-    ssize_t rc = 0;
+    int rc = 0;
     size_t sz,*sz_out, pa_sz;
     struct stat sbuf;
 
@@ -1023,11 +1024,11 @@ TPL_API ssize_t tpl_dump(tpl_node *r, int mode, ...) {
         tpl_dump_to_mem(r,buf,sz);
         bufv = buf;
         do {
-            rc = write(fd,bufv,sz);
-            if (rc > 0) {
-                sz -= rc;
-                bufv += rc;
-            } else if (rc == -1) {
+            long res = write(fd,bufv,sz);
+            if (res > INT_MAX)
+              res = INT_MAX;
+            rc = (int)res;
+            if (rc == -1) {
                 if (errno == EINTR || errno == EAGAIN) continue;
                 tpl_hook.oops("error writing to fd %d: %s\n", fd, strerror(errno));
                 free(buf);
@@ -1038,6 +1039,10 @@ TPL_API ssize_t tpl_dump(tpl_node *r, int mode, ...) {
                   }
                 }
                 return -1;
+            }
+            else {
+              sz -= rc;
+              bufv += rc;
             }
         } while (sz > 0);
         free(buf);
@@ -1283,7 +1288,7 @@ TPL_API char* tpl_peek(int mode, ...) {
     char *filename=NULL, *datapeek_f=NULL, *datapeek_c, *datapeek_s;
     void *addr=NULL, *dv, *datapeek_p=NULL;
     size_t sz=0, fmt_len, first_atom, num_fxlens=0;
-    ssize_t datapeek_ssz, datapeek_csz, datapeek_flen;
+    uint32_t datapeek_ssz, datapeek_csz, datapeek_flen;
     tpl_mmap_rec mr = {0,NULL,0};
     char *fmt,*fmt_cpy=NULL,c;
     size_t intlsz, **fxlens=NULL, *num_fxlens_out=NULL, *fxlensv;
@@ -1372,7 +1377,7 @@ TPL_API char* tpl_peek(int mode, ...) {
 
        first_atom = strspn(fmt, "S()"); /* skip any leading S() */
 
-       datapeek_flen = strlen(datapeek_f);
+       datapeek_flen = (uint32_t)strlen(datapeek_f);
        if (strspn(datapeek_f, tpl_datapeek_ok_chars) < datapeek_flen) {
          tpl_hook.oops("invalid TPL_DATAPEEK format: %s\n", datapeek_f);
          tpl_hook.free(fmt_cpy); fmt_cpy = NULL; /* fail */
@@ -1414,7 +1419,7 @@ TPL_API char* tpl_peek(int mode, ...) {
            }
            *(char**)datapeek_p = datapeek_s;
          } else {
-           datapeek_csz = tpl_size_for(*datapeek_c);
+           datapeek_csz = (uint32_t)tpl_size_for(*datapeek_c);
            if ((uintptr_t)dv-(uintptr_t)addr + datapeek_csz > sz) {
              tpl_hook.oops("tpl_peek: tpl has insufficient length\n");
              tpl_hook.free(fmt_cpy); fmt_cpy = NULL; /* fail */
@@ -1436,12 +1441,12 @@ fail:
 /* tpl_jot(TPL_FILE, "file.tpl", "si", &s, &i); */
 /* tpl_jot(TPL_MEM, &buf, &sz, "si", &s, &i); */
 /* tpl_jot(TPL_FD, fd, "si", &s, &i); */
-TPL_API ssize_t tpl_jot(int mode, ...) {
+TPL_API int tpl_jot(int mode, ...) {
     va_list ap;
     char *filename, *fmt;
     size_t *sz;
     int fd;
-    ssize_t rc=0;
+    int rc=0;
     void **buf;
     tpl_node *tn;
 
@@ -1792,8 +1797,7 @@ static int tpl_mmap_file(char *filename, tpl_mmap_rec *mr) {
 TPL_API int tpl_pack(tpl_node *r, int i) {
     tpl_node *n, *child, *np;
     void *datav=NULL;
-    size_t sz, itermax;
-    ssize_t slen;
+    size_t slen, sz, itermax;
     char *str;
     tpl_bin *bin;
     tpl_pound_data *pd;
@@ -2169,7 +2173,7 @@ static int tpl_unpackA0(tpl_node *r) {
 }
 
 /* In-place byte order swapping of a word of length "len" bytes */
-static void tpl_byteswap(void *word, ssize_t len) {
+static void tpl_byteswap(void *word, size_t len) {
     int i;
     char c, *w;
     w = (char*)word;
@@ -2239,7 +2243,7 @@ TPL_API int tpl_gather(int mode, ...) {
 static int tpl_gather_blocking(int fd, void **img, size_t *sz) {
     char preamble[8];
     int i=0;
-    ssize_t rc;
+    long rc;
     uint32_t tpllen;
 
     do { 
@@ -2308,7 +2312,7 @@ static int tpl_gather_blocking(int fd, void **img, size_t *sz) {
 /* the file descriptor must be non-blocking for this functino to work. */
 static int tpl_gather_nonblocking( int fd, tpl_gather_t **gs, tpl_gather_cb *cb, void *data) {
     char buf[TPL_GATHER_BUFLEN], *img, *tpl;
-    ssize_t rc;
+    long rc;
     int keep_looping, cbrc=0;
     size_t catlen;
     uint32_t tpllen;
