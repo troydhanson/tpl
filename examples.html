@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 8.6.8" />
+<meta name="generator" content="AsciiDoc 8.6.7" />
 <title>tpl examples</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -87,14 +87,10 @@ ul, ol, li > p {
 ul > li     { color: #aaa; }
 ul > li > * { color: black; }
 
-.monospaced, code, pre {
-  font-family: "Courier New", Courier, monospace;
-  font-size: inherit;
-  color: navy;
+pre {
   padding: 0;
   margin: 0;
 }
-
 
 #author {
   color: #527bbd;
@@ -223,7 +219,7 @@ div.exampleblock > div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; vertical-align: text-bottom; }
+span.image img { border-style: none; }
 a.image:visited { color: white; }
 
 dl {
@@ -419,6 +415,12 @@ div.unbreakable { page-break-inside: avoid; }
  *
  * */
 
+tt {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+}
+
 div.tableblock {
   margin-top: 1.0em;
   margin-bottom: 1.5em;
@@ -451,6 +453,12 @@ div.tableblock > table[frame="vsides"] {
  * html5 specific
  *
  * */
+
+.monospaced {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+}
 
 table.tableblock {
   margin-top: 1.0em;
@@ -531,8 +539,6 @@ body.manpage div.sectionbody {
 @media print {
   body.manpage div#toc { display: none; }
 }
-
-
 @media screen {
   body {
     max-width: 50em; /* approximately 80 characters wide */
@@ -767,7 +773,7 @@ asciidoc.install(2);
 <div id="header">
 <h1>tpl examples</h1>
 <span id="author">Troy D. Hanson</span><br />
-<span id="email"><code>&lt;<a href="mailto:tdh@tkhanson.net">tdh@tkhanson.net</a>&gt;</code></span><br />
+<span id="email"><tt>&lt;<a href="mailto:tdh@tkhanson.net">tdh@tkhanson.net</a>&gt;</tt></span><br />
 <span id="revnumber">version 1.0,</span>
 <span id="revdate">October 2006</span>
 <div id="toc">
@@ -787,7 +793,7 @@ tpl. If you&#8217;re looking for a more explanatory document, please read the
 <div class="listingblock">
 <div class="title">Storing an array of integers to file</div>
 <div class="content">
-<pre><code>#include "tpl.h"
+<pre><tt>#include "tpl.h"
 
 int main() {
     tpl_node *tn;
@@ -799,13 +805,13 @@ int main() {
     }
     tpl_dump( tn, TPL_FILE, "demo.tpl" );
     tpl_free( tn );
-}</code></pre>
+}</tt></pre>
 </div></div>
 <div class="paragraph"><p>A program that unpacks this tpl data file is shown below.</p></div>
 <div class="listingblock">
 <div class="title">Re-reading an array of integers from file</div>
 <div class="content">
-<pre><code>#include &lt;stdio.h&gt;
+<pre><tt>#include &lt;stdio.h&gt;
 #include "tpl.h"
 
 int main() {
@@ -818,12 +824,12 @@ int main() {
         printf("%d ", i);
     }
     tpl_free( tn );
-}</code></pre>
+}</tt></pre>
 </div></div>
 <div class="paragraph"><p>When run, this program prints:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>0 1 2 3 4 5 6 7 8 9</code></pre>
+<pre><tt>0 1 2 3 4 5 6 7 8 9</tt></pre>
 </div></div>
 </div>
 <div class="sect2">
@@ -831,7 +837,7 @@ int main() {
 <div class="listingblock">
 <div class="title">Packing nested arrays</div>
 <div class="content">
-<pre><code>#include "tpl.h"
+<pre><tt>#include "tpl.h"
 
 int main() {
     char c;
@@ -847,7 +853,7 @@ int main() {
 
     tpl_dump(tn, TPL_FILE, "test40.tpl");
     tpl_free(tn);
-}</code></pre>
+}</tt></pre>
 </div></div>
 <div class="paragraph"><p>This creates a nested array in which the parent has two elements: the first
 element is the two-element nested array <em>a</em>, <em>b</em>; and the second element is
@@ -855,7 +861,7 @@ the three-element nested array <em>1</em>, <em>2</em>, <em>3</em>.</p></div>
 <div class="listingblock">
 <div class="title">Unpacking nested arrays</div>
 <div class="content">
-<pre><code>#include "tpl.h"
+<pre><tt>#include "tpl.h"
 #include &lt;stdio.h&gt;
 
 int main() {
@@ -870,13 +876,13 @@ int main() {
         printf("\n");
     }
     tpl_free(tn);
-}</code></pre>
+}</tt></pre>
 </div></div>
 <div class="paragraph"><p>When run, this program prints:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>a b
-1 2 3</code></pre>
+<pre><tt>a b
+1 2 3</tt></pre>
 </div></div>
 </div>
 <div class="sect2">
@@ -884,7 +890,7 @@ int main() {
 <div class="listingblock">
 <div class="title">Packing a string array</div>
 <div class="content">
-<pre><code>    #include "tpl.h"
+<pre><tt>    #include "tpl.h"
 
     int main() {
         tpl_node *tn;
@@ -900,12 +906,12 @@ int main() {
 
         tpl_dump(tn, TPL_FILE, "strings.tpl");
         tpl_free(tn);
-    }</code></pre>
+    }</tt></pre>
 </div></div>
 <div class="listingblock">
 <div class="title">Unpacking a string array</div>
 <div class="content">
-<pre><code>    #include &lt;stdio.h&gt;
+<pre><tt>    #include &lt;stdio.h&gt;
     #include "tpl.h"
 
     int main() {
@@ -921,13 +927,13 @@ int main() {
         }
 
         tpl_free(tn);
-    }</code></pre>
+    }</tt></pre>
 </div></div>
 <div class="paragraph"><p>When run, this program prints:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>bob
-betty</code></pre>
+<pre><tt>bob
+betty</tt></pre>
 </div></div>
 </div>
 <div class="sect2">
@@ -935,7 +941,7 @@ betty</code></pre>
 <div class="listingblock">
 <div class="title">Packing integer/string pairs</div>
 <div class="content">
-<pre><code>#include "tpl.h"
+<pre><tt>#include "tpl.h"
 
 int main(int argc, char *argv[]) {
     tpl_node *tn;
@@ -949,12 +955,12 @@ int main(int argc, char *argv[]) {
 
     tpl_dump(tn, TPL_FILE, "/tmp/test35.tpl");
     tpl_free(tn);
-}</code></pre>
+}</tt></pre>
 </div></div>
 <div class="listingblock">
 <div class="title">Unpacking integer/string pairs</div>
 <div class="content">
-<pre><code>#include &lt;stdio.h&gt;
+<pre><tt>#include &lt;stdio.h&gt;
 #include "tpl.h"
 
 int main(int argc, char *argv[]) {
@@ -969,14 +975,14 @@ int main(int argc, char *argv[]) {
         printf("id %d, user %s\n", id, name);
 
     tpl_free(tn);
-}</code></pre>
+}</tt></pre>
 </div></div>
 <div class="paragraph"><p>When run, this program prints:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>id 0, user joe
+<pre><tt>id 0, user joe
 id 1, user bob
-id 2, user mary</code></pre>
+id 2, user mary</tt></pre>
 </div></div>
 </div>
 <div class="sect2">
@@ -984,7 +990,7 @@ id 2, user mary</code></pre>
 <div class="listingblock">
 <div class="title">Packing a binary buffer</div>
 <div class="content">
-<pre><code>    #include "tpl.h"
+<pre><tt>    #include "tpl.h"
     #include &lt;sys/time.h&gt;
 
     int main() {
@@ -1000,12 +1006,12 @@ id 2, user mary</code></pre>
 
         tpl_dump(tn, TPL_FILE, "bin.tpl");
         tpl_free(tn);
-    }</code></pre>
+    }</tt></pre>
 </div></div>
 <div class="listingblock">
 <div class="title">Unpacking a binary buffer</div>
 <div class="content">
-<pre><code>    #include "tpl.h"
+<pre><tt>    #include "tpl.h"
 
     int main() {
         tpl_node *tn;
@@ -1019,7 +1025,7 @@ id 2, user mary</code></pre>
         free(tb.addr);  /* important! */
 
         tpl_free(tn);
-    }</code></pre>
+    }</tt></pre>
 </div></div>
 </div>
 <div class="sect2">
@@ -1028,7 +1034,7 @@ id 2, user mary</code></pre>
 <div class="listingblock">
 <div class="title">IPC over a pipe</div>
 <div class="content">
-<pre><code>int main() {
+<pre><tt>int main() {
     tpl_node *tn;
     unsigned i, sum=0;
     int fd[2], pid;
@@ -1051,15 +1057,15 @@ id 2, user mary</code></pre>
 
         waitpid(pid,NULL,0);
     }
-}</code></pre>
+}</tt></pre>
 </div></div>
 <div class="paragraph"><p>The child unpacks the integers in the message, and sums them, printing:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>49995000</code></pre>
+<pre><tt>49995000</tt></pre>
 </div></div>
-<div class="paragraph"><p>The example above (with <code>#include</code> headers omitted here) is included in the
-file <code>tests/test28.c</code>.</p></div>
+<div class="paragraph"><p>The example above (with <tt>#include</tt> headers omitted here) is included in the
+file <tt>tests/test28.c</tt>.</p></div>
 </div>
 </div>
 </div>
@@ -1068,7 +1074,7 @@ file <code>tests/test28.c</code>.</p></div>
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br />
-Last updated 2013-03-12 17:20:12 EDT
+Last updated 2013-07-18 23:24:42 EDT
 </div>
 </div>
 </body>
