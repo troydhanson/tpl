@@ -119,12 +119,6 @@ Download
 You can clone tpl, or get a zipfile, from the
 https://github.com/troydhanson/tpl[GitHub project page].
 
-Getting help
-~~~~~~~~~~~~
-Please ask on Github if you need help. You can email the author at
-Troy D. Hanson <tdh@tkhanson.net>, but I am often behind on email by weeks or
-months. Sorry!
-
 Contributing
 ~~~~~~~~~~~~
 If you add a new feature or fix something in tpl or in the extras, please
@@ -139,7 +133,8 @@ image:rss.png[(RSS)]. You can also follow @troydhanson on Twitter for updates.
 
 Other software
 ^^^^^^^^^^^^^^
-Other open-source software by the author is listed at http://tkhanson.net.
+Other open-source software by the author is listed at
+http://troydhanson.github.io
 
 Build and install
 -----------------
