@@ -2309,7 +2309,7 @@ return 0 under normal circumstances, or a negative number to abort; that is,
 returning a negative number causes <tt>tpl_gather</tt> itself to discard any remaining
 full or partial tpl images that have been read, and to return a negative number
 (-4 in particular) to signal its caller to close the file descriptor.</p></div>
-<div class="paragraph"><p>The return value of <tt>tpl_gather()</tt> is negative if an error occured or 0 if a
+<div class="paragraph"><p>The return value of <tt>tpl_gather()</tt> is negative if an error occurred or 0 if a
 normal EOF was encountered-- both cases require that the caller close the file
 descriptor (and stop monitoring it for readability, obviously). If the return
 value is positive, the function succeeded in gathering whatever data was
