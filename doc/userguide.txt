@@ -1224,7 +1224,7 @@ returning a negative number causes `tpl_gather` itself to discard any remaining
 full or partial tpl images that have been read, and to return a negative number
 (-4 in particular) to signal its caller to close the file descriptor.
 
-The return value of `tpl_gather()` is negative if an error occured or 0 if a
+The return value of `tpl_gather()` is negative if an error occurred or 0 if a
 normal EOF was encountered-- both cases require that the caller close the file
 descriptor (and stop monitoring it for readability, obviously). If the return
 value is positive, the function succeeded in gathering whatever data was

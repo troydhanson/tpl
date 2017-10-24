@@ -14,7 +14,7 @@
 #    have been created beforehand (by running 'configure; make' in the
 #    top-level directory); a reminder will be printed if you have not done so.
 #
-#    Note, libtool will create wrappers around each test to accomodate the 
+#    Note, libtool will create wrappers around each test to accommodate the 
 #    pre-installed state of ../src/libtpl.la. In a real program, you'd link 
 #    against an installed libtpl.la, and these wrappers would not be used.
 #
