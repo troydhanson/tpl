@@ -1021,13 +1021,13 @@ TPL_API int tpl_dump(tpl_node *r, int mode, ...) {
             } else if (rc == -1) {
                 if (errno == EINTR || errno == EAGAIN) continue;
                 tpl_hook.oops("error writing to fd %d: %s\n", fd, strerror(errno));
-                free(buf);
                 /* attempt to rewind partial write to a regular file */
                 if (fstat(fd,&sbuf) == 0 && S_ISREG(sbuf.st_mode)) {
                   if (ftruncate(fd,sbuf.st_size - (bufv-(char*)buf)) == -1) {
                     tpl_hook.oops("can't rewind: %s\n", strerror(errno));
                   }
                 }
+                free(buf);
                 return -1;
             }
         } while (sz > 0);
