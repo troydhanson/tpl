@@ -1332,7 +1332,7 @@ int main() {
     tpl_load(tn, TPL_FILE, "/tmp/fixed.tpl");
     tpl_unpack(tn,0);  /* unpack all 10 elements at once */
     tpl_free(tn);
-    /* now do something with x[0]...x[9].. (not shown */
+    /* now do something with x[0]...x[9].. (not shown) */
 }</tt></pre>
 </div></div>
 <div class="paragraph"><p>For completeness, let&#8217;s also see how to unpack a variable-length integer array.</p></div>
@@ -1532,7 +1532,7 @@ arrays are supported.</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><tt>tn = tpl_map("S(ci)#", sa, 100);  /* fixed-length array of 100 structures */
-tn = tpl_map("A(S(ci))", &amp;one);   /* variable-length array (one at a time)*/</tt></pre>
+tn = tpl_map("A(S(ci))", &amp;one);   /* variable-length array (one at a time) */</tt></pre>
 </div></div>
 <div class="paragraph"><p>The differences between fixed- and variable-length arrays are explained in the
 <a href="#arrays">Arrays</a> section.</p></div>
@@ -1591,7 +1591,7 @@ tpl_node *tn;</tt></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><tt>/* add some elements to list.. (not shown)*/</tt></pre>
+<pre><tt>/* add some elements to list.. (not shown) */</tt></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">

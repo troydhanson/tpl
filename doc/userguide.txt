@@ -395,7 +395,7 @@ int main() {
     tpl_load(tn, TPL_FILE, "/tmp/fixed.tpl");
     tpl_unpack(tn,0);  /* unpack all 10 elements at once */
     tpl_free(tn);
-    /* now do something with x[0]...x[9].. (not shown */
+    /* now do something with x[0]...x[9].. (not shown) */
 }
 --------------------------------------------------------------------------------
 
@@ -589,7 +589,7 @@ arrays are supported.
   struct ci sa[100], one;
 
   tn = tpl_map("S(ci)#", sa, 100);  /* fixed-length array of 100 structures */
-  tn = tpl_map("A(S(ci))", &one);   /* variable-length array (one at a time)*/
+  tn = tpl_map("A(S(ci))", &one);   /* variable-length array (one at a time) */
 
 The differences between fixed- and variable-length arrays are explained in the 
 <<arrays,Arrays>> section.
@@ -635,7 +635,7 @@ list element, copying it to the temporary variable and packing it.
   struct element *list, *i, tmp;
   tpl_node *tn;
 
-  /* add some elements to list.. (not shown)*/
+  /* add some elements to list.. (not shown) */
 
   tn = tpl_map("A(S(ci))", &tmp);
   for(i = list; i != NULL; i=i->next) {
@@ -684,7 +684,7 @@ The function `tpl_pack()` packs data into a tpl. The arguments to
 `tpl_pack()` are a `tpl_node*` and an <<index,index number>>.
 
     tn = tpl_map("A(i)A(c)", &i, &c);
-    for(i=0; i<10; i++) tpl_pack(tn, 1);    /* pack 0-9 into index 1 */
+    for(i=0; i<10; i++) tpl_pack(tn, 1);     /* pack 0-9 into index 1 */
     for(c='a'; c<='z'; c++) tpl_pack(tn, 2); /* pack a-z into index 2 */
 
 .Data is copied when packed
@@ -1131,7 +1131,7 @@ int main() {
   tpl_node *tn;
   tpl_hook.fatal = catch_fatal;    /* install fatal handler */
 
-  err = setjmp(env); /* on error, control will return here  */
+  err = setjmp(env);  /* on error, control will return here */
   if (err) {
     printf("caught error!\n");
     return -1;
