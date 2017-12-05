@@ -253,7 +253,7 @@ static const struct tpl_type_t tpl_types[] = {
 static int tpl_oops(const char *fmt, ...) {
     va_list ap;
     va_start(ap,fmt);
-    vfprintf(stderr,fmt,ap);
+    vprintf(fmt,ap);
     va_end(ap);
     return 0;
 }
