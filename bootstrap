@@ -4,6 +4,7 @@
 # It is executed only to generate "configure"
 
 set -x
+mkdir -p config
 aclocal -I config
 autoheader
 libtoolize --copy --force
