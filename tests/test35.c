@@ -3,7 +3,7 @@
 int main(int argc, char *argv[]) {
     tpl_node *tn;
     int id;
-    char *name, *names[] = { "joe", "bob", "cary" };
+    char *name, *names[] = { "joe", "bob", "cary", NULL };
 
     tn = tpl_map("A(is)", &id, &name);
 
