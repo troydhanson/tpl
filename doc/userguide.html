@@ -1934,7 +1934,7 @@ characters that are not inside an <tt>A(...)</tt>, such as the <tt>i</tt> in the
 <div class="paragraph"><p>For variable-length arrays, each call to <tt>tpl_unpack()</tt> unpacks another element.
 The return value can be used to tell when you&#8217;re done: if it&#8217;s positive, an
 element was unpacked; if it&#8217;s 0, nothing was unpacked because there are no more
-elements. A negative retun value indicates an error (e.g. invalid index number).
+elements. A negative return value indicates an error (e.g. invalid index number).
 In this document, we usually unpack variable-length arrays using a <tt>while</tt> loop:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -1990,7 +1990,7 @@ run, this program prints:</p></div>
 <div class="sect2">
 <h3 id="tpl_free">tpl_free</h3>
 <div class="paragraph"><p>The final step for any tpl is to release it using <tt>tpl_free()</tt>. Its only
-argument is the the <tt>tpl_node*</tt> to free.</p></div>
+argument is the <tt>tpl_node*</tt> to free.</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><tt>tpl_free( tn );</tt></pre>
@@ -2011,7 +2011,7 @@ current number of elements; it will decrease as elements are unpacked).</p></div
 </div>
 <div class="sect2">
 <h3 id="tpl_peek">tpl_peek</h3>
-<div class="paragraph"><p>This function peeks into a file or a memory buffer containing a tpl image and
+<div class="paragraph"><p>This function peeks into a file or a memory buffer containing a tpl image
 and returns a copy of its format string.  It can also peek at the lengths of
 any fixed-length arrays in the format string, or it can also peek into the data
 stored in the tpl.</p></div>

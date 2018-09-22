@@ -900,7 +900,7 @@ Unpacking elements from an array
 For variable-length arrays, each call to `tpl_unpack()` unpacks another element.
 The return value can be used to tell when you're done: if it's positive, an
 element was unpacked; if it's 0, nothing was unpacked because there are no more
-elements. A negative retun value indicates an error (e.g. invalid index number).
+elements. A negative return value indicates an error (e.g. invalid index number).
 In this document, we usually unpack variable-length arrays using a `while` loop:
 
     while( tpl_unpack( tn, 1 ) > 0 ) {
@@ -954,7 +954,7 @@ run, this program prints:
 tpl_free
 ~~~~~~~~
 The final step for any tpl is to release it using `tpl_free()`. Its only
-argument is the the `tpl_node*` to free.
+argument is the `tpl_node*` to free.
     
     tpl_free( tn );
 
@@ -975,7 +975,7 @@ current number of elements; it will decrease as elements are unpacked).
 [[tpl_peek]]
 tpl_peek
 ~~~~~~~~
-This function peeks into a file or a memory buffer containing a tpl image and
+This function peeks into a file or a memory buffer containing a tpl image
 and returns a copy of its format string.  It can also peek at the lengths of
 any fixed-length arrays in the format string, or it can also peek into the data
 stored in the tpl.  
