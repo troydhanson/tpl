@@ -1332,7 +1332,7 @@ int main() {
     tpl_load(tn, TPL_FILE, "/tmp/fixed.tpl");
     tpl_unpack(tn,0);  /* unpack all 10 elements at once */
     tpl_free(tn);
-    /* now do something with x[0]...x[9].. (not shown */
+    /* now do something with x[0]...x[9].. (not shown) */
 }</tt></pre>
 </div></div>
 <div class="paragraph"><p>For completeness, let&#8217;s also see how to unpack a variable-length integer array.</p></div>
@@ -1532,7 +1532,7 @@ arrays are supported.</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><tt>tn = tpl_map("S(ci)#", sa, 100);  /* fixed-length array of 100 structures */
-tn = tpl_map("A(S(ci))", &amp;one);   /* variable-length array (one at a time)*/</tt></pre>
+tn = tpl_map("A(S(ci))", &amp;one);   /* variable-length array (one at a time) */</tt></pre>
 </div></div>
 <div class="paragraph"><p>The differences between fixed- and variable-length arrays are explained in the
 <a href="#arrays">Arrays</a> section.</p></div>
@@ -1591,7 +1591,7 @@ tpl_node *tn;</tt></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><tt>/* add some elements to list.. (not shown)*/</tt></pre>
+<pre><tt>/* add some elements to list.. (not shown) */</tt></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
@@ -1788,7 +1788,7 @@ cellspacing="0" cellpadding="4">
 <dd>
 <p>
     Writes the tpl to a memory buffer. The following two arguments must be a
-    <tt>void\*\*</tt> and a <tt>size_t*</tt>. The function will allocate a buffer and store
+    <tt>void**</tt> and a <tt>size_t*</tt>. The function will allocate a buffer and store
     its address and length into these locations.  The caller is responsible to
     <tt>free()</tt> the buffer when done using it.
 </p>
@@ -1934,7 +1934,7 @@ characters that are not inside an <tt>A(...)</tt>, such as the <tt>i</tt> in the
 <div class="paragraph"><p>For variable-length arrays, each call to <tt>tpl_unpack()</tt> unpacks another element.
 The return value can be used to tell when you&#8217;re done: if it&#8217;s positive, an
 element was unpacked; if it&#8217;s 0, nothing was unpacked because there are no more
-elements. A negative retun value indicates an error (e.g. invalid index number).
+elements. A negative return value indicates an error (e.g. invalid index number).
 In this document, we usually unpack variable-length arrays using a <tt>while</tt> loop:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -1990,7 +1990,7 @@ run, this program prints:</p></div>
 <div class="sect2">
 <h3 id="tpl_free">tpl_free</h3>
 <div class="paragraph"><p>The final step for any tpl is to release it using <tt>tpl_free()</tt>. Its only
-argument is the the <tt>tpl_node*</tt> to free.</p></div>
+argument is the <tt>tpl_node*</tt> to free.</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><tt>tpl_free( tn );</tt></pre>
@@ -2011,7 +2011,7 @@ current number of elements; it will decrease as elements are unpacked).</p></div
 </div>
 <div class="sect2">
 <h3 id="tpl_peek">tpl_peek</h3>
-<div class="paragraph"><p>This function peeks into a file or a memory buffer containing a tpl image and
+<div class="paragraph"><p>This function peeks into a file or a memory buffer containing a tpl image
 and returns a copy of its format string.  It can also peek at the lengths of
 any fixed-length arrays in the format string, or it can also peek into the data
 stored in the tpl.</p></div>
@@ -2309,7 +2309,7 @@ return 0 under normal circumstances, or a negative number to abort; that is,
 returning a negative number causes <tt>tpl_gather</tt> itself to discard any remaining
 full or partial tpl images that have been read, and to return a negative number
 (-4 in particular) to signal its caller to close the file descriptor.</p></div>
-<div class="paragraph"><p>The return value of <tt>tpl_gather()</tt> is negative if an error occured or 0 if a
+<div class="paragraph"><p>The return value of <tt>tpl_gather()</tt> is negative if an error occurred or 0 if a
 normal EOF was encountered-- both cases require that the caller close the file
 descriptor (and stop monitoring it for readability, obviously). If the return
 value is positive, the function succeeded in gathering whatever data was
