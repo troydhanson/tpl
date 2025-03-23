@@ -23,6 +23,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define TPL_VERSION 1.6
 
+#ifndef __GNUC__
+#    define __attribute__(x)
+#endif
+
+__attribute__((used))
 static const char id[]="$Id: tpl.c 192 2009-04-24 10:35:30Z thanson $";
 
 
@@ -33,6 +38,12 @@ static const char id[]="$Id: tpl.c 192 2009-04-24 10:35:30Z thanson $";
 
 #ifndef _WIN32
 #include <unistd.h>     /* for ftruncate */
+/* If compiled under strict C99, ftruncate is unavailable */
+#if  !( _XOPEN_SOURCE >= 500 \
+    || /* Since glibc 2.3.5: */ _POSIX_C_SOURCE >= 200112L \
+    || /* glibc <= 2.19: */ _BSD_SOURCE)
+#error "ftruncate(), a required function, is unavailable on this version of glibc."
+#endif
 #else
 #include <io.h>
 #define ftruncate(x,y) _chsize(x,y)
@@ -134,8 +145,8 @@ typedef struct tpl_pidx {
 typedef struct tpl_atyp {
     uint32_t num;    /* num elements */
     size_t sz;       /* size of each backbone's datum */
-    struct tpl_backbone *bb,*bbtail; 
-    void *cur;                       
+    struct tpl_backbone *bb,*bbtail;
+    void *cur;
 } tpl_atyp;
 
 /* backbone to extend A(...) lists dynamically */
@@ -144,7 +155,7 @@ typedef struct tpl_backbone {
     /* when this structure is malloc'd, extra space is alloc'd at the
      * end to store the backbone "datum", and data points to it. */
 #if __STDC_VERSION__ < 199901
-    char *data;  
+    char *data;
 #else
     char data[];
 #endif
@@ -196,11 +207,11 @@ static int tpl_gather_mem( char *buf, size_t len, tpl_gather_t **gs, tpl_gather_
 static int tpl_gather_nonblocking( int fd, tpl_gather_t **gs, tpl_gather_cb *cb, void *data);
 static int tpl_gather_blocking(int fd, void **img, size_t *sz);
 
-/* This is used internally to help calculate padding when a 'double' 
+/* This is used internally to help calculate padding when a 'double'
  * follows a smaller datatype in a structure. Normally under gcc
  * on x86, d will be aligned at +4, however use of -malign-double
  * causes d to be aligned at +8 (this is actually faster on x86).
- * Also SPARC and x86_64 seem to align always on +8. 
+ * Also SPARC and x86_64 seem to align always on +8.
  */
 struct tpl_double_alignment_detector {
     char a;
@@ -231,7 +242,7 @@ tpl_hook_t tpl_hook = {
 };
 
 static const char tpl_fmt_chars[] = "AS($)BiucsfIUjv#"; /* valid format chars */
-static const char tpl_S_fmt_chars[] = "iucsfIUjv#$()"; /* valid within S(...) */
+/* static const char tpl_S_fmt_chars[] = "iucsfIUjv#$()";*/ /* valid within S(...) */
 static const char tpl_datapeek_ok_chars[] = "iucsfIUjv"; /* valid in datapeek */
 static const struct tpl_type_t tpl_types[] = {
     /* [TPL_TYPE_ROOT] =   */  {'r', 0},
@@ -274,12 +285,12 @@ static tpl_node *tpl_node_new(tpl_node *parent) {
     return n;
 }
 
-/* Used in S(..) formats to pack several fields from a structure based on 
- * only the structure address. We need to calculate field addresses 
+/* Used in S(..) formats to pack several fields from a structure based on
+ * only the structure address. We need to calculate field addresses
  * manually taking into account the size of the fields and intervening padding.
  * The wrinkle is that double is not normally aligned on x86-32 but the
  * -malign-double compiler option causes it to be. Double are aligned
- * on Sparc, and apparently on 64 bit x86. We use a helper structure 
+ * on Sparc, and apparently on 64 bit x86. We use a helper structure
  * to detect whether double is aligned in this compilation environment.
  */
 char *calc_field_addr(tpl_node *parent, int type,char *struct_addr, int ordinal) {
@@ -290,14 +301,14 @@ char *calc_field_addr(tpl_node *parent, int type,char *struct_addr, int ordinal)
     if (ordinal == 1) return struct_addr;  /* first field starts on structure address */
 
     /* generate enough padding so field addr is divisible by it's align_sz. 4, 8, etc */
-    prev = parent->children->prev; 
+    prev = parent->children->prev;
     switch(type) {
       case TPL_TYPE_DOUBLE:
-        align_sz = sizeof(struct tpl_double_alignment_detector) > 12 ? 8 : 4; 
+        align_sz = sizeof(struct tpl_double_alignment_detector) > 12 ? 8 : 4;
         break;
       case TPL_TYPE_INT64:
       case TPL_TYPE_UINT64:
-        align_sz = sizeof(struct tpl_int64_alignment_detector) > 12 ? 8 : 4; 
+        align_sz = sizeof(struct tpl_int64_alignment_detector) > 12 ? 8 : 4;
         break;
       default:
         align_sz = tpl_types[type].sz;
@@ -333,7 +344,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
 
 
     root = tpl_node_new(NULL);
-    root->type = TPL_TYPE_ROOT; 
+    root->type = TPL_TYPE_ROOT;
     root->data = (tpl_root_data*)tpl_hook.malloc(sizeof(tpl_root_data));
     if (!root->data) fatal_oom();
     memset((tpl_root_data*)root->data,0,sizeof(tpl_root_data));
@@ -371,7 +382,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                 if (in_structure) {
                     if (ordinal == 1) {
                       /* for S(...)# iteration. Apply any changes to case 's' too!!! */
-                      iter_start_node = n; 
+                      iter_start_node = n;
                       struct_widest_node = n;
                     }
                     if (tpl_types[n->type].sz > tpl_types[struct_widest_node->type].sz) {
@@ -381,7 +392,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                 } else n->addr = (void*)va_arg(ap,void*);
                 n->data = tpl_hook.malloc(tpl_types[t].sz);
                 if (!n->data) fatal_oom();
-                if (n->parent->type == TPL_TYPE_ARY) 
+                if (n->parent->type == TPL_TYPE_ARY)
                     ((tpl_atyp*)(n->parent->data))->sz += tpl_types[t].sz;
                 DL_ADD(parent->children,n);
                 break;
@@ -402,7 +413,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                 n->data = tpl_hook.malloc(sizeof(char*));
                 if (!n->data) fatal_oom();
                 *(char**)(n->data) = NULL;
-                if (n->parent->type == TPL_TYPE_ARY) 
+                if (n->parent->type == TPL_TYPE_ARY)
                     ((tpl_atyp*)(n->parent->data))->sz += sizeof(void*);
                 DL_ADD(parent->children,n);
                 break;
@@ -415,8 +426,8 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                 if (!applies_to_struct) {
                   if (!(t == TPL_TYPE_BYTE   || t == TPL_TYPE_INT32 ||
                         t == TPL_TYPE_UINT32 || t == TPL_TYPE_DOUBLE ||
-                        t == TPL_TYPE_UINT64 || t == TPL_TYPE_INT64 || 
-                        t == TPL_TYPE_UINT16 || t == TPL_TYPE_INT16 || 
+                        t == TPL_TYPE_UINT64 || t == TPL_TYPE_INT64 ||
+                        t == TPL_TYPE_UINT16 || t == TPL_TYPE_INT16 ||
                         t == TPL_TYPE_STR )) goto fail;
                 }
                 /* count up how many contiguous # and form their product */
@@ -427,7 +438,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                   if (pound_num < 1) {
                     tpl_hook.fatal("non-positive iteration count %d\n", pound_num);
                   }
-                  if (num_contig_fxlens >= (sizeof(contig_fxlens)/sizeof(contig_fxlens[0]))) {
+                  if ((size_t)num_contig_fxlens >= (sizeof(contig_fxlens)/sizeof(contig_fxlens[0]))) {
                     tpl_hook.fatal("contiguous # exceeds hardcoded limit\n");
                   }
                   contig_fxlens[num_contig_fxlens++] = pound_num;
@@ -444,28 +455,28 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                   if (!n->data) fatal_oom();
                   pd = (tpl_pound_data*)n->data;
                   pd->inter_elt_len = inter_elt_len;
-                  pd->iter_start_node = iter_start_node; 
+                  pd->iter_start_node = iter_start_node;
                   pd->iternum = 0;
                   DL_ADD(parent->children,n);
                   /* multiply the 'num' and data space on each atom in the structure */
                   for(np = iter_start_node; np != n; np = np->next) {
                     if (n->parent->type == TPL_TYPE_ARY) {
-                      ((tpl_atyp*)(n->parent->data))->sz += 
+                      ((tpl_atyp*)(n->parent->data))->sz +=
                          tpl_types[np->type].sz * (np->num * (n->num - 1));
                     }
-                    np->data = tpl_hook.realloc(np->data, tpl_types[np->type].sz * 
+                    np->data = tpl_hook.realloc(np->data, tpl_types[np->type].sz *
                                                           np->num * n->num);
                     if (!np->data) fatal_oom();
                     memset(np->data, 0, tpl_types[np->type].sz * np->num * n->num);
                   }
                 } else { /* simple atom-# form does not require a loop */
                   preceding->num = pound_prod;
-                  preceding->data = tpl_hook.realloc(preceding->data, 
+                  preceding->data = tpl_hook.realloc(preceding->data,
                       tpl_types[t].sz * preceding->num);
                   if (!preceding->data) fatal_oom();
                   memset(preceding->data,0,tpl_types[t].sz * preceding->num);
                   if (n->parent->type == TPL_TYPE_ARY) {
-                      ((tpl_atyp*)(n->parent->data))->sz += tpl_types[t].sz * 
+                      ((tpl_atyp*)(n->parent->data))->sz += tpl_types[t].sz *
                                                             (preceding->num-1);
                   }
                 }
@@ -490,7 +501,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                 n->data = tpl_hook.malloc(sizeof(tpl_bin*));
                 if (!n->data) fatal_oom();
                 *((tpl_bin**)n->data) = NULL;
-                if (n->parent->type == TPL_TYPE_ARY) 
+                if (n->parent->type == TPL_TYPE_ARY)
                     ((tpl_atyp*)(n->parent->data))->sz += sizeof(tpl_bin);
                 DL_ADD(parent->children,n);
                 break;
@@ -514,7 +525,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                 ((tpl_atyp*)(n->data))->bb = NULL;
                 ((tpl_atyp*)(n->data))->bbtail = NULL;
                 ((tpl_atyp*)(n->data))->cur = NULL;
-                if (n->parent->type == TPL_TYPE_ARY) 
+                if (n->parent->type == TPL_TYPE_ARY)
                     ((tpl_atyp*)(n->parent->data))->sz += sizeof(void*);
                 break;
             case 'S':
@@ -536,7 +547,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
                 if (in_nested_structure) in_nested_structure--;
                 else if (in_structure && (in_structure-1 == lparen_level)) {
                   /* calculate delta between contiguous structures in array */
-                  struct_next = calc_field_addr(parent, struct_widest_node->type, 
+                  struct_next = calc_field_addr(parent, struct_widest_node->type,
                                                 struct_addr, ordinal++);
                   inter_elt_len = struct_next - struct_addr;
                   in_structure=0;
@@ -558,7 +569,7 @@ TPL_API tpl_node *tpl_map_va(char *fmt, va_list ap) {
 
     /* copy the format string, save for convenience */
     ((tpl_root_data*)(root->data))->fmt = tpl_hook.malloc(strlen(fmt)+1);
-    if (((tpl_root_data*)(root->data))->fmt == NULL) 
+    if (((tpl_root_data*)(root->data))->fmt == NULL)
         fatal_oom();
     memcpy(((tpl_root_data*)(root->data))->fmt,fmt,strlen(fmt)+1);
 
@@ -590,7 +601,7 @@ static void tpl_free_keep_map(tpl_node *r) {
 
     /* For mmap'd files, or for 'ufree' memory images , do appropriate release */
     if ((((tpl_root_data*)(r->data))->flags & mmap_bits) == mmap_bits) {
-        tpl_unmap_file( &((tpl_root_data*)(r->data))->mmap); 
+        tpl_unmap_file( &((tpl_root_data*)(r->data))->mmap);
     } else if ((((tpl_root_data*)(r->data))->flags & ufree_bits) == ufree_bits) {
         tpl_hook.free( ((tpl_root_data*)(r->data))->mmap.text );
     }
@@ -646,7 +657,7 @@ static void tpl_free_keep_map(tpl_node *r) {
                     ((tpl_atyp*)(c->data))->bbtail = NULL;
                     ((tpl_atyp*)(c->data))->cur = NULL;
 
-                    c = c->children; 
+                    c = c->children;
                     break;
                 default:
                     tpl_hook.fatal("unsupported format character\n");
@@ -685,7 +696,7 @@ TPL_API void tpl_free(tpl_node *r) {
 
     /* For mmap'd files, or for 'ufree' memory images , do appropriate release */
     if ((((tpl_root_data*)(r->data))->flags & mmap_bits) == mmap_bits) {
-        tpl_unmap_file( &((tpl_root_data*)(r->data))->mmap); 
+        tpl_unmap_file( &((tpl_root_data*)(r->data))->mmap);
     } else if ((((tpl_root_data*)(r->data))->flags & ufree_bits) == ufree_bits) {
         tpl_hook.free( ((tpl_root_data*)(r->data))->mmap.text );
     }
@@ -806,7 +817,7 @@ static void *tpl_extend_backbone(tpl_node *n) {
       ((tpl_atyp*)(n->data))->sz );  /* datum hangs on coattails of bb */
     if (!bb) fatal_oom();
 #if __STDC_VERSION__ < 199901
-    bb->data = (char*)((uintptr_t)bb + sizeof(tpl_backbone)); 
+    bb->data = (char*)((uintptr_t)bb + sizeof(tpl_backbone));
 #endif
     memset(bb->data,0,((tpl_atyp*)(n->data))->sz);
     bb->next = NULL;
@@ -836,7 +847,7 @@ static int *tpl_fxlens(tpl_node *r, int *num_fxlens) {
 
 /* called when serializing an 'A' type node into a buffer which has
  * already been set up with the proper space. The backbone is walked
- * which was obtained from the tpl_atyp header passed in. 
+ * which was obtained from the tpl_atyp header passed in.
  */
 static void *tpl_dump_atyp(tpl_node *n, tpl_atyp* at, void *dv) {
     tpl_backbone *bb;
@@ -943,7 +954,7 @@ static size_t tpl_ser_osz(tpl_node *n) {
             case TPL_TYPE_BIN:
                 sz += sizeof(uint32_t);  /* binary buf len */
                 memcpy(&binp,c->data,sizeof(tpl_bin*)); /* cp to aligned */
-                sz += binp->sz; 
+                sz += binp->sz;
                 break;
             case TPL_TYPE_STR:
                 for(i=0; i < c->num; i++) {
@@ -962,7 +973,7 @@ static size_t tpl_ser_osz(tpl_node *n) {
                 pd = (tpl_pound_data*)c->data;
                 if (++(pd->iternum) < itermax) {
                   for(np=pd->iter_start_node; np != c; np = np->next) {
-                     np->data = (char*)(np->data) + 
+                     np->data = (char*)(np->data) +
                                 (tpl_types[np->type].sz * np->num);
                   }
                   c = pd->iter_start_node;
@@ -970,8 +981,8 @@ static size_t tpl_ser_osz(tpl_node *n) {
                 } else { /* loop complete. */
                   pd->iternum = 0;
                   for(np=pd->iter_start_node; np != c; np = np->next) {
-                     np->data = (char*)(np->data) - ((itermax-1) * 
-                                                     tpl_types[np->type].sz * 
+                     np->data = (char*)(np->data) - ((itermax-1) *
+                                                     tpl_types[np->type].sz *
                                                      np->num);
                   }
                 }
@@ -1069,7 +1080,7 @@ TPL_API int tpl_dump(tpl_node *r, int mode, ...) {
     return rc;
 }
 
-/* This function expects the caller to have set up a memory buffer of 
+/* This function expects the caller to have set up a memory buffer of
  * adequate size to hold the serialized tpl. The sz parameter must be
  * the result of tpl_ser_osz(r).
  */
@@ -1086,7 +1097,7 @@ static int tpl_dump_to_mem(tpl_node *r,void *addr,size_t sz) {
     flags = 0;
     if (tpl_cpu_bigendian()) flags |= TPL_FL_BIGENDIAN;
     if (strchr(fmt,'s')) flags |= TPL_FL_NULLSTRINGS;
-    sz32 = sz; 
+    sz32 = sz;
 
     dv = addr;
     dv = tpl_cpv(dv,TPL_MAGIC,3);         /* copy tpl magic prefix */
@@ -1133,7 +1144,7 @@ static int tpl_dump_to_mem(tpl_node *r,void *addr,size_t sz) {
 
                    /* in start or midst of loop. advance data pointers. */
                    for(np=pd->iter_start_node; np != c; np = np->next) {
-                     np->data = (char*)(np->data) + 
+                     np->data = (char*)(np->data) +
                                 (tpl_types[np->type].sz * np->num);
                    }
                    /* do next iteration */
@@ -1141,12 +1152,12 @@ static int tpl_dump_to_mem(tpl_node *r,void *addr,size_t sz) {
                    continue;
 
                  } else { /* loop complete. */
-                 
+
                    /* reset iteration index and addr/data pointers. */
                    pd->iternum = 0;
                    for(np=pd->iter_start_node; np != c; np = np->next) {
-                     np->data = (char*)(np->data) - ((itermax-1) * 
-                                                     tpl_types[np->type].sz * 
+                     np->data = (char*)(np->data) - ((itermax-1) *
+                                                     tpl_types[np->type].sz *
                                                      np->num);
                    }
 
@@ -1196,7 +1207,7 @@ static int tpl_sanity(tpl_node *r, int excess_ok) {
     memcpy(&intlflags,dv,sizeof(char));  /* extract flags */
     if (intlflags & ~TPL_SUPPORTED_BITFLAGS) return ERR_UNSUPPORTED_FLAGS;
     /* TPL1.3 stores strings with a "length+1" prefix to discern NULL strings from
-       empty strings from non-empty strings; TPL1.2 only handled the latter two. 
+       empty strings from non-empty strings; TPL1.2 only handled the latter two.
        So we need to be mindful of which string format we're reading from. */
     if (!(intlflags & TPL_FL_NULLSTRINGS)) {
       ((tpl_root_data*)(r->data))->flags |= TPL_OLD_STRING_FMT;
@@ -1211,7 +1222,7 @@ static int tpl_sanity(tpl_node *r, int excess_ok) {
     fmt = (char*)dv;
     while ((uintptr_t)dv-(uintptr_t)d < bufsz && !found_nul) {
         if ( (c = *(char*)dv) != '\0') {
-            if (strchr(tpl_fmt_chars,c) == NULL) 
+            if (strchr(tpl_fmt_chars,c) == NULL)
                return ERR_FMT_INVALID;  /* invalid char in format string */
             if ( (c = *(char*)dv) == '#') octothorpes++;
             dv = (void*)((uintptr_t)dv + 1);
@@ -1220,11 +1231,11 @@ static int tpl_sanity(tpl_node *r, int excess_ok) {
     }
     if (!found_nul) return ERR_FMT_MISSING_NUL;  /* runaway format string */
     dv = (void*)((uintptr_t)dv + 1);   /* advance to octothorpe lengths buffer */
-    
+
     /* compare the map format to the format of this tpl image */
     mapfmt = tpl_fmt(r);
     rc = strcmp(mapfmt,fmt);
-    if (rc != 0) return ERR_FMT_MISMATCH; 
+    if (rc != 0) return ERR_FMT_MISMATCH;
 
     /* compare octothorpe lengths in image to the mapped values */
     if ((((uintptr_t)dv + (octothorpes * 4)) - (uintptr_t)d) > bufsz) return ERR_INCONSISTENT_SZ4;
@@ -1241,7 +1252,7 @@ static int tpl_sanity(tpl_node *r, int excess_ok) {
     rc = tpl_serlen(r,r,dv,&serlen);  /* get computed serlen of data part */
     if (rc == -1) return ERR_INCONSISTENT_SZ2; /* internal inconsistency in tpl image */
     serlen += ((uintptr_t)dv - (uintptr_t)d);   /* add back serlen of preamble part */
-    if (excess_ok && (bufsz < serlen)) return ERR_INCONSISTENT_SZ3;  
+    if (excess_ok && (bufsz < serlen)) return ERR_INCONSISTENT_SZ3;
     if (!excess_ok && (serlen != bufsz)) return ERR_INCONSISTENT_SZ3;  /* buffer/internal sz exceeds serlen */
     return 0;
 }
@@ -1268,7 +1279,7 @@ static int tpl_needs_endian_swap(void *d) {
 }
 
 static size_t tpl_size_for(char c) {
-  int i;
+  size_t i;
   for(i=0; i < sizeof(tpl_types)/sizeof(tpl_types[0]); i++) {
     if (tpl_types[i].c == c) return tpl_types[i].sz;
   }
@@ -1359,7 +1370,7 @@ TPL_API char* tpl_peek(int mode, ...) {
       *num_fxlens_out = num_fxlens;
       fxlensv = *fxlens;
       while(num_fxlens--) {
-          memcpy(fxlensv,dv,sizeof(uint32_t)); 
+          memcpy(fxlensv,dv,sizeof(uint32_t));
           if (xendian) tpl_byteswap(fxlensv, sizeof(uint32_t));
           dv = (void*)((uintptr_t)dv + sizeof(uint32_t));
           fxlensv++;
@@ -1384,7 +1395,7 @@ TPL_API char* tpl_peek(int mode, ...) {
        }
 
        /* advance to data start, then copy out requested elements */
-       dv = (void*)((uintptr_t)dv +  (num_fxlens * sizeof(uint32_t)));  
+       dv = (void*)((uintptr_t)dv +  (num_fxlens * sizeof(uint32_t)));
        for(datapeek_c = datapeek_f; *datapeek_c != '\0'; datapeek_c++) {
          datapeek_p = va_arg(ap, void*);
          if (*datapeek_c == 's') {  /* special handling for strings */
@@ -1513,10 +1524,10 @@ TPL_API int tpl_load(tpl_node *r, int mode, ...) {
         if ( (rc = tpl_sanity(r, (mode & TPL_EXCESS_OK))) != 0) {
             if (rc == ERR_FMT_MISMATCH) {
                 tpl_hook.oops("%s: format signature mismatch\n", filename);
-            } else if (rc == ERR_FLEN_MISMATCH) { 
+            } else if (rc == ERR_FLEN_MISMATCH) {
                 tpl_hook.oops("%s: array lengths mismatch\n", filename);
-            } else { 
-                tpl_hook.oops("%s: not a valid tpl file\n", filename); 
+            } else {
+                tpl_hook.oops("%s: not a valid tpl file\n", filename);
             }
             tpl_unmap_file( &((tpl_root_data*)(r->data))->mmap );
             return -1;
@@ -1528,8 +1539,8 @@ TPL_API int tpl_load(tpl_node *r, int mode, ...) {
         if ( (rc = tpl_sanity(r, (mode & TPL_EXCESS_OK))) != 0) {
             if (rc == ERR_FMT_MISMATCH) {
                 tpl_hook.oops("format signature mismatch\n");
-            } else { 
-                tpl_hook.oops("not a valid tpl file\n"); 
+            } else {
+                tpl_hook.oops("not a valid tpl file\n");
             }
             return -1;
         }
@@ -1578,7 +1589,7 @@ static void tpl_free_atyp(tpl_node *n, tpl_atyp *atyp) {
     while (bb) {
         bbnxt = bb->next;
         dv = bb->data;
-        c=n->children; 
+        c=n->children;
         while (c) {
             switch (c->type) {
                 case TPL_TYPE_BYTE:
@@ -1632,7 +1643,7 @@ static void tpl_free_atyp(tpl_node *n, tpl_atyp *atyp) {
     tpl_hook.free(atyp);
 }
 
-/* determine (by walking) byte length of serialized r/A node at address dv 
+/* determine (by walking) byte length of serialized r/A node at address dv
  * returns 0 on success, or -1 if the tpl isn't trustworthy (fails consistency)
  */
 static int tpl_serlen(tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
@@ -1642,7 +1653,7 @@ static int tpl_serlen(tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
     size_t len=0, alen, buf_past, itermax;
     tpl_pound_data *pd;
 
-    buf_past = ((uintptr_t)((tpl_root_data*)(r->data))->mmap.text + 
+    buf_past = ((uintptr_t)((tpl_root_data*)(r->data))->mmap.text +
                       ((tpl_root_data*)(r->data))->mmap.text_sz);
 
     if (n->type == TPL_TYPE_ROOT) num = 1;
@@ -1656,7 +1667,7 @@ static int tpl_serlen(tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
     } else tpl_hook.fatal("internal error in tpl_serlen\n");
 
     while (num-- > 0) {
-        c=n->children; 
+        c=n->children;
         while (c) {
             switch (c->type) {
                 case TPL_TYPE_BYTE:
@@ -1773,7 +1784,7 @@ static int tpl_mmap_file(char *filename, tpl_mmap_rec *mr) {
         return -1;
     }
 
-    mr->text_sz = (size_t)stat_buf.st_size;  
+    mr->text_sz = (size_t)stat_buf.st_size;
     mr->text = mmap(0, stat_buf.st_size, PROT_READ, MAP_PRIVATE, mr->fd, 0);
     if (mr->text == MAP_FAILED) {
         close(mr->fd);
@@ -1825,7 +1836,7 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
                 if (n->type == TPL_TYPE_ARY) n->ser_osz += tpl_types[child->type].sz * child->num;
                 break;
             case TPL_TYPE_BIN:
-                /* copy the buffer to be packed */ 
+                /* copy the buffer to be packed */
                 slen = ((tpl_bin*)child->addr)->sz;
                 if (slen >0) {
                     str = tpl_hook.malloc(slen);
@@ -1842,12 +1853,12 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
                     if ((*(tpl_bin**)(child->data))->sz != 0) {
                             tpl_hook.free( (*(tpl_bin**)(child->data))->addr );
                     }
-                    tpl_hook.free(*(tpl_bin**)(child->data));  
+                    tpl_hook.free(*(tpl_bin**)(child->data));
                 }
                 memcpy(child->data,&bin,sizeof(tpl_bin*));
                 if (datav) {
                     datav = tpl_cpv(datav, &bin, sizeof(tpl_bin*));
-                    *(tpl_bin**)(child->data) = NULL;  
+                    *(tpl_bin**)(child->data) = NULL;
                 }
                 if (n->type == TPL_TYPE_ARY) {
                     n->ser_osz += sizeof(uint32_t); /* binary buf len word */
@@ -1856,7 +1867,7 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
                 break;
             case TPL_TYPE_STR:
                 for(fidx=0; fidx < child->num; fidx++) {
-                  /* copy the string to be packed. slen includes \0. this 
+                  /* copy the string to be packed. slen includes \0. this
                      block also works if the string pointer is NULL. */
                   char *caddr = ((char**)child->addr)[fidx];
                   char **cdata = &((char**)child->data)[fidx];
@@ -1867,15 +1878,15 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
                     memcpy(str,caddr,slen); /* include \0 */
                   } else {
                     str = NULL;
-                  } 
+                  }
                   /* now pack its pointer, first freeing any pre-existing string */
                   if (*cdata != NULL) {
-                      tpl_hook.free(*cdata);  
+                      tpl_hook.free(*cdata);
                   }
                   memcpy(cdata,&str,sizeof(char*));
                   if (datav) {
                       datav = tpl_cpv(datav, &str, sizeof(char*));
-                      *cdata = NULL;  
+                      *cdata = NULL;
                   }
                   if (n->type == TPL_TYPE_ARY) {
                       n->ser_osz += sizeof(uint32_t); /* string len word */
@@ -1903,8 +1914,8 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
                 }
                 break;
 
-            case TPL_TYPE_POUND: 
-                /* we need to iterate n times over preceding nodes in S(...). 
+            case TPL_TYPE_POUND:
+                /* we need to iterate n times over preceding nodes in S(...).
                  * we may be in the midst of an iteration each time or starting. */
                  pd = (tpl_pound_data*)child->data;
                  itermax = child->num;
@@ -1918,7 +1929,7 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
 
                    /* in start or midst of loop. advance addr/data pointers. */
                    for(np=pd->iter_start_node; np != child; np = np->next) {
-                     np->data = (char*)(np->data) + 
+                     np->data = (char*)(np->data) +
                           (tpl_types[np->type].sz * np->num);
                      np->addr = (char*)(np->addr) + pd->inter_elt_len;
                    }
@@ -1927,12 +1938,12 @@ TPL_API int tpl_pack(tpl_node *r, int i) {
                    continue;
 
                  } else { /* loop complete. */
-                 
+
                    /* reset iteration index and addr/data pointers. */
                    pd->iternum = 0;
                    for(np=pd->iter_start_node; np != child; np = np->next) {
                      np->data = (char*)(np->data) - ((itermax-1) *
-                                                      tpl_types[np->type].sz * 
+                                                      tpl_types[np->type].sz *
                                                       np->num);
                      np->addr = (char*)(np->addr) - ((itermax-1) * pd->inter_elt_len);
                    }
@@ -1960,7 +1971,7 @@ TPL_API int tpl_unpack(tpl_node *r, int i) {
     size_t sz;
 
 
-    /* handle unusual case of tpl_pack,tpl_unpack without an 
+    /* handle unusual case of tpl_pack,tpl_unpack without an
      * intervening tpl_dump. do a dump/load implicitly. */
     if (((tpl_root_data*)(r->data))->flags & TPL_WRONLY) {
         if (tpl_dump(r,TPL_MEM,&img,&sz) != 0) return -1;
@@ -2057,7 +2068,7 @@ TPL_API int tpl_unpack(tpl_node *r, int i) {
                   continue;
 
                 } else { /* loop complete. */
-                
+
                   /* reset iteration index and addr/data pointers. */
                   pd->iternum = 0;
                   for(np=pd->iter_start_node; np != c; np = np->next) {
@@ -2067,7 +2078,7 @@ TPL_API int tpl_unpack(tpl_node *r, int i) {
                 }
                 break;
             case TPL_TYPE_ARY:
-                if (tpl_serlen(r,c,dv, &A_bytes) == -1) 
+                if (tpl_serlen(r,c,dv, &A_bytes) == -1)
                     tpl_hook.fatal("internal error in unpack\n");
                 memcpy( &((tpl_atyp*)(c->data))->num, dv, sizeof(uint32_t));
                 if (((tpl_root_data*)(r->data))->flags & TPL_XENDIAN)
@@ -2143,7 +2154,7 @@ static int tpl_unpackA0(tpl_node *r) {
                 }
                 break;
             case TPL_TYPE_ARY:
-                if ( tpl_serlen(r,c,dv, &A_bytes) == -1) 
+                if ( tpl_serlen(r,c,dv, &A_bytes) == -1)
                     tpl_hook.fatal("internal error in unpackA0\n");
                 memcpy( &((tpl_atyp*)(c->data))->num, dv, sizeof(uint32_t));
                 if (((tpl_root_data*)(r->data))->flags & TPL_XENDIAN)
@@ -2230,10 +2241,10 @@ TPL_API int tpl_gather(int mode, ...) {
  */
 static int tpl_gather_blocking(int fd, void **img, size_t *sz) {
     char preamble[8];
-    int i=0, rc;
-    uint32_t tpllen;
+    intmax_t rc;
+    uint32_t i=0, tpllen;
 
-    do { 
+    do {
         rc = read(fd,&preamble[i],8-i);
         i += (rc>0) ? rc : 0;
     } while ((rc==-1 && (errno==EINTR||errno==EAGAIN)) || (rc>0 && i<8));
@@ -2257,12 +2268,12 @@ static int tpl_gather_blocking(int fd, void **img, size_t *sz) {
         return -1;
     }
 
-    /* malloc space for remainder of tpl image (overall length tpllen) 
+    /* malloc space for remainder of tpl image (overall length tpllen)
      * and read it in
      */
-    if (tpl_hook.gather_max > 0 && 
+    if (tpl_hook.gather_max > 0 &&
         tpllen > tpl_hook.gather_max) {
-        tpl_hook.oops("tpl exceeds max length %d\n", 
+        tpl_hook.oops("tpl exceeds max length %d\n",
             tpl_hook.gather_max);
         return -2;
     }
@@ -2273,7 +2284,7 @@ static int tpl_gather_blocking(int fd, void **img, size_t *sz) {
 
     memcpy(*img,preamble,8);  /* copy preamble to output buffer */
     i=8;
-    do { 
+    do {
         rc = read(fd,&((*(char**)img)[i]),tpllen-i);
         i += (rc>0) ? rc : 0;
     } while ((rc==-1 && (errno==EINTR||errno==EAGAIN)) || (rc>0 && i<tpllen));
@@ -2329,12 +2340,12 @@ static int tpl_gather_nonblocking( int fd, tpl_gather_t **gs, tpl_gather_cb *cb,
             /* concatenate any partial tpl from last read with new buffer */
             if (*gs) {
                 catlen = (*gs)->len + rc;
-                if (tpl_hook.gather_max > 0 && 
+                if (tpl_hook.gather_max > 0 &&
                     catlen > tpl_hook.gather_max) {
                     tpl_hook.free( (*gs)->img );
                     tpl_hook.free( (*gs) );
                     *gs = NULL;
-                    tpl_hook.oops("tpl exceeds max length %d\n", 
+                    tpl_hook.oops("tpl exceeds max length %d\n",
                         tpl_hook.gather_max);
                     return -2;              /* error, caller should close fd */
                 }
@@ -2367,7 +2378,7 @@ static int tpl_gather_nonblocking( int fd, tpl_gather_t **gs, tpl_gather_cb *cb,
                     if (cbrc < 0) keep_looping = 0;
                     else keep_looping = (tpl+8 < img+catlen) ? 1 : 0;
                 } else keep_looping=0;
-            } 
+            }
             /* check if app callback requested closure of tpl source */
             if (cbrc < 0) {
                 tpl_hook.oops("tpl_fd_gather aborted by app callback\n");
@@ -2377,14 +2388,14 @@ static int tpl_gather_nonblocking( int fd, tpl_gather_t **gs, tpl_gather_cb *cb,
                 return -4;
             }
             /* store any leftover, partial tpl fragment for next read */
-            if (tpl == img && img != buf) {  
+            if (tpl == img && img != buf) {
                 /* consumed nothing from img!=buf */
                 if ( (*gs = tpl_hook.malloc(sizeof(tpl_gather_t))) == NULL ) {
                     fatal_oom();
                 }
                 (*gs)->img = tpl;
                 (*gs)->len = catlen;
-            } else if (tpl < img+catlen) {  
+            } else if (tpl < img+catlen) {
                 /* consumed 1+ tpl(s) from img!=buf or 0 from img==buf */
                 if ( (*gs = tpl_hook.malloc(sizeof(tpl_gather_t))) == NULL ) {
                     fatal_oom();
@@ -2395,13 +2406,13 @@ static int tpl_gather_nonblocking( int fd, tpl_gather_t **gs, tpl_gather_cb *cb,
                 (*gs)->len = img+catlen - tpl;
                 memcpy( (*gs)->img, tpl, img+catlen - tpl);
                 /* free partially consumed concat buffer if used */
-                if (img != buf) tpl_hook.free(img); 
+                if (img != buf) tpl_hook.free(img);
             } else {                        /* tpl(s) fully consumed */
                 /* free consumed concat buffer if used */
-                if (img != buf) tpl_hook.free(img); 
+                if (img != buf) tpl_hook.free(img);
             }
         }
-    } 
+    }
 }
 
 /* gather tpl piecemeal from memory buffer (not fd) e.g., from a lower-level api */
@@ -2414,12 +2425,12 @@ static int tpl_gather_mem( char *buf, size_t len, tpl_gather_t **gs, tpl_gather_
     /* concatenate any partial tpl from last read with new buffer */
     if (*gs) {
         catlen = (*gs)->len + len;
-        if (tpl_hook.gather_max > 0 && 
+        if (tpl_hook.gather_max > 0 &&
             catlen > tpl_hook.gather_max) {
             tpl_hook.free( (*gs)->img );
             tpl_hook.free( (*gs) );
             *gs = NULL;
-            tpl_hook.oops("tpl exceeds max length %d\n", 
+            tpl_hook.oops("tpl exceeds max length %d\n",
                 tpl_hook.gather_max);
             return -2;              /* error, caller should stop accepting input from source*/
         }
@@ -2452,7 +2463,7 @@ static int tpl_gather_mem( char *buf, size_t len, tpl_gather_t **gs, tpl_gather_
             if (cbrc < 0) keep_looping = 0;
             else keep_looping = (tpl+8 < img+catlen) ? 1 : 0;
         } else keep_looping=0;
-    } 
+    }
     /* check if app callback requested closure of tpl source */
     if (cbrc < 0) {
         tpl_hook.oops("tpl_mem_gather aborted by app callback\n");
@@ -2462,14 +2473,14 @@ static int tpl_gather_mem( char *buf, size_t len, tpl_gather_t **gs, tpl_gather_
         return -4;
     }
     /* store any leftover, partial tpl fragment for next read */
-    if (tpl == img && img != buf) {  
+    if (tpl == img && img != buf) {
         /* consumed nothing from img!=buf */
         if ( (*gs = tpl_hook.malloc(sizeof(tpl_gather_t))) == NULL ) {
             fatal_oom();
         }
         (*gs)->img = tpl;
         (*gs)->len = catlen;
-    } else if (tpl < img+catlen) {  
+    } else if (tpl < img+catlen) {
         /* consumed 1+ tpl(s) from img!=buf or 0 from img==buf */
         if ( (*gs = tpl_hook.malloc(sizeof(tpl_gather_t))) == NULL ) {
             fatal_oom();
@@ -2480,10 +2491,10 @@ static int tpl_gather_mem( char *buf, size_t len, tpl_gather_t **gs, tpl_gather_
         (*gs)->len = img+catlen - tpl;
         memcpy( (*gs)->img, tpl, img+catlen - tpl);
         /* free partially consumed concat buffer if used */
-        if (img != buf) tpl_hook.free(img); 
+        if (img != buf) tpl_hook.free(img);
     } else {                        /* tpl(s) fully consumed */
         /* free consumed concat buffer if used */
-        if (img != buf) tpl_hook.free(img); 
+        if (img != buf) tpl_hook.free(img);
     }
     return 1;
 }
